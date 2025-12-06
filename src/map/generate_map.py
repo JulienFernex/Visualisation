@@ -1,6 +1,10 @@
+"""
+Génère la carte
+"""
+
 import pandas as pd
 import folium
-import numpy as np
+from folium import Element
 import requests
 from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, RAW_DATA_PATH, CLEAN_DATA_PATH, OUTPUT_MAP
 from src.utils.geojson import get_departements_geojson
@@ -28,6 +32,14 @@ df_counts['Nom_Departement_Harmonise'] = df_counts['Nom_Departement_Harmonise'].
 centre_france = [46.603354, 1.888334]
 # Initialiser la carte
 m = folium.Map(location=centre_france, zoom_start=6, tiles="cartodbpositron")
+
+style_css = """
+<style>
+.leaflet-interactive { outline: none; }
+</style>
+"""
+
+m.get_root().html.add_child(Element(style_css))
 
 choropleth = folium.Choropleth( 
     geo_data=GEOJSON_URL,

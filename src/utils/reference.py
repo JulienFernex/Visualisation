@@ -1,3 +1,7 @@
+"""
+Contient les constantes du projet
+"""
+
 import os
 
 GEOJSON_URL = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-avec-outre-mer.geojson"

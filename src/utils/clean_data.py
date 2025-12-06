@@ -1,3 +1,7 @@
+"""
+Convertit un fichier CSV brut en données utilisables
+"""
+
 import pandas as pd
 import os
 
@@ -12,7 +16,7 @@ except ImportError:
             __import__('sys').path.insert(0, ROOT)
         from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH
 
-# Netoie le fichier pour ne faire aparaître que les départements avec leurs nombres d'établissements sanitaires
+# Nettoie le fichier pour ne faire aparaître que les départements avec leurs nombres d'établissements sanitaires
 def clean_etab_to_depart(document):
     df_counts = document.groupby('Libelle_Departement').size().reset_index(name='Nombre_Etablissements')
     df_counts.to_csv(CLEAN_DATA_PATH, index=False)

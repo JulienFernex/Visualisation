@@ -1,17 +1,21 @@
+"""
+Récupère les données géographiques 
+"""
+
 import requests
 import os
 import sys
 import pandas as pd
 
 try:
-    # When imported as a package (recommended)
+    # Quand importé en tant que package
     from .reference import GEOJSON_URL
 except ImportError:
     try:
-        # Try absolute import (if project root is on PYTHONPATH)
+        # Essaie de l'importation absolue (si la racine du projet se trouve dans PYTHONPATH)
         from src.utils.reference import GEOJSON_URL
     except ImportError:
-        # Fallback: add project root to sys.path then import
+        # Fallback: ajouter la racine du projet à sys.path puis importer
         ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         if ROOT not in sys.path:
             sys.path.insert(0, ROOT)
@@ -34,7 +38,7 @@ def get_departements_geojson(return_df=False):
         data = [{'code': f['properties']['code'], 'nom': f['properties']['nom']} for f in features]
         return pd.DataFrame(data)
     
-    # Reste du code si vous avez besoin de la liste triée
+    # Retourne la liste triée
     noms_departements = []
     for feature in geojson_data['features']:
         nom = feature['properties']['nom']
