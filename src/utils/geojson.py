@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 
 try:
-    # Quand importé en tant que package
+    # Lorsque importé en tant que package
     from .reference import GEOJSON_URL
 except ImportError:
     try:
@@ -33,7 +33,7 @@ def get_departements_geojson(return_df=False):
         exit()
 
     if return_df:
-        # Convertir lses propriétés GeoJSON en DataFrame pour la jointure
+        # Convertir lesd propriétés GeoJSON en DataFrame pour la jointure
         features = geojson_data['features']
         data = [{'code': f['properties']['code'], 'nom': f['properties']['nom']} for f in features]
         return pd.DataFrame(data)

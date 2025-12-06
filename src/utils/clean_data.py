@@ -16,12 +16,12 @@ except ImportError:
             __import__('sys').path.insert(0, ROOT)
         from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH
 
-# Nettoie le fichier pour ne faire aparaître que les départements avec leurs nombres d'établissements sanitaires
+# Nettoie le fichier pour ne faire apapparaître que les départements avec leurs nombres d'établissements sanitaires
 def clean_etab_to_depart(document):
     df_counts = document.groupby('Libelle_Departement').size().reset_index(name='Nombre_Etablissements')
     df_counts.to_csv(CLEAN_DATA_PATH, index=False)
 
-# Charger le fichier
+# Charge le fichier
 df = pd.read_csv(
     RAW_DATA_PATH,
     sep=';',
