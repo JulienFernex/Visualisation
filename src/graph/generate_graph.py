@@ -16,9 +16,6 @@ def create_bubble_chart():
         return px.scatter(title="Données non trouvées")
 
     # Création du graphique à bulles
-    # Pour l'instant il y a un problème sur les noms dans le graph au niveau des colonnes x et y
-    # Le problème c'est que le nom est lié à l'import 
-    # Le problème se réglera de lui même en améliorant l'affinage des données
     fig = px.scatter(
         df, 
         x='Libelle_Departement',  # Noms des départements
@@ -26,6 +23,7 @@ def create_bubble_chart():
         size=COL_VALUE,           # Taille de la bulle proportionnelle au nombre d'établissements
         color='Libelle_Departement',  # Couleur différente par département
         hover_name='Libelle_Departement',
+        labels={COL_VALUE: "Nb d'établissements", 'Libelle_Departement': 'Département'},
         size_max=60,
         title="Distribution du nombre d'établissements de santé par département"
     )
