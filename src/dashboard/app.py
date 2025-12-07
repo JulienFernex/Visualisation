@@ -1,5 +1,5 @@
 import dash
-from dash import html
+from dash import html, dcc
 import sys
 import os
 
@@ -10,10 +10,14 @@ sys.path.append(cheminProjet)
 
 # Importation de la fonction générant la carte
 from src.map.generate_map import create_folium_map
+from src.graph.generate_graph import create_bubble_chart
 
 # Carte Folium
 folium_map_obj = create_folium_map()
 map_html_string = folium_map_obj.get_root().render()
+
+# Graphique a bulles
+bubble_fig = create_bubble_chart()
 
 # Configuration de l'application
 app = dash.Dash(__name__)
@@ -45,12 +49,12 @@ app.layout = html.Div(children=[
     html.Div([
         # Colonne Gauche : Graphique
         html.Div([
-            html.H3("ZONE DU GRAPHIQUE", style={'textAlign': 'left'}),
-            html.Iframe(
-            id='folium-map',
-            srcDoc=map_html_string,
-            style={'width': '100%', 'height': '600px', 'border': 'none'}
-        )
+            html.H3("Graphique à bulles", style={'textAlign': 'left'}),
+            dcc.Graph(   # dcc.Graph pour Plotly
+                id='bubble-chart',
+                figure=bubble_fig,
+                style={'height': '600px'}
+            )
         ], style={'width': '47%', 'display': 'inline-block', 'verticalAlign': 'top', 'boxShadow': '0px 0px 5px #ccc', 'padding': '15px', 'backgroundColor': 'white'}),
 
         # Espace entre les deux zones
