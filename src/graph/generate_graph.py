@@ -4,28 +4,34 @@ Génère un graphique de type Bubble Chart (Scatter Plot)
 
 import pandas as pd
 import plotly.express as px
-from src.utils.reference import CLEAN_DATA_PATH, COL_VALUE
+from src.utils.reference import CLEAN_DATA_PATH, COL_VALUE, COL_POPULATION
 
-def create_bubble_chart():
-
+def create_bubble_chart(selected_col=COL_VALUE):
     # Chargement des données
-    # Les mêmes que pour la carte (pour l'instant ?)
     try:
         df = pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
         return px.scatter(title="Données non trouvées")
 
+    # Définition dynamique du titre et des labels
+    if selected_col == COL_POPULATION:
+        titre = "Distribution de la population totale par département"
+        label_y = "Population Totale"
+    else:
+        titre = "Distribution du nombre d'établissements de santé par département"
+        label_y = "Nb d'établissements"
+
     # Création du graphique à bulles
     fig = px.scatter(
         df, 
         x='Libelle_Departement',  # Noms des départements
-        y=COL_VALUE,              # Nombre d'établissements
-        size=COL_VALUE,           # Taille de la bulle proportionnelle au nombre d'établissements
+        y=selected_col,              # Nombre d'établissements / Taille population
+        size=selected_col,           # Taille de la bulle proportionnelle à la donnée
         color='Libelle_Departement',  # Couleur différente par département
         hover_name='Libelle_Departement',
-        labels={COL_VALUE: "Nb d'établissements", 'Libelle_Departement': 'Département'},
+        labels={selected_col: label_y, 'Libelle_Departement': 'Département'},
         size_max=60,
-        title="Distribution du nombre d'établissements de santé par département"
+        title=titre
     )
 
     # Masquer la légende des couleurs car il y a trop de départements

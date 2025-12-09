@@ -6,11 +6,11 @@ import pandas as pd
 import folium
 from folium import Element
 import requests
-from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, RAW_DATA_PATH, CLEAN_DATA_PATH, OUTPUT_MAP
+from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, RAW_DATA_PATH, CLEAN_DATA_PATH
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 
-def create_folium_map():
+def create_folium_map(selected_col=COL_VALUE):
     try:
         df_counts = pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
@@ -34,6 +34,7 @@ def create_folium_map():
     # Initialiser la carte
     m = folium.Map(location=centre_france, zoom_start=6, tiles="cartodbpositron")
 
+    # Suppression du carré noir qui s'affiche lors du clic sur un département
     style_css = """
     <style>
     .leaflet-interactive { outline: none; }
@@ -42,16 +43,18 @@ def create_folium_map():
 
     m.get_root().html.add_child(Element(style_css))
 
+    legend_label = "Population Totale" if selected_col == COL_POPULATION else "Nombre d'Établissements"
+
     choropleth = folium.Choropleth( 
         geo_data=GEOJSON_URL,
-        name='Établissements par Département',
+        name='Choropleth',
         data=df_counts,
-        columns=[JOIN_KEY_DATA, COL_VALUE],
+        columns=[JOIN_KEY_DATA, selected_col],
         key_on=JOIN_KEY_GEOJSON,
         fill_color='YlOrRd', 
         fill_opacity=0.8,
         line_opacity=0.4,
-        legend_name="Nombre d'Établissements",
+        legend_name=legend_label,
         highlight=False
     ).add_to(m)
 
@@ -62,14 +65,15 @@ def create_folium_map():
         geojson_data = None
 
     if geojson_data:
-        value_map = dict(zip(df_counts[JOIN_KEY_DATA], df_counts[COL_VALUE]))
+        value_map = dict(zip(df_counts[JOIN_KEY_DATA], df_counts[selected_col]))
 
         for feat in geojson_data.get('features', []):
             props = feat.setdefault('properties', {})
             nom = props.get('nom')
-            props[COL_VALUE] = value_map.get(nom, 0)
+            props['valeur_dynamique'] = value_map.get(nom, 0)
 
-        popup = folium.features.GeoJsonPopup(fields=['nom', COL_VALUE], aliases=['Département', 'Nombre établissements'], localize=True)
+        alias_val = "Population" if selected_col == COL_POPULATION else "Nombre établissements"
+        popup = folium.features.GeoJsonPopup(fields=['nom', 'valeur_dynamique'], aliases=['Département', alias_val], localize=True)
         tooltip = folium.features.GeoJsonTooltip(fields=['nom'], aliases=['Département'])
 
         geojson_layer = folium.GeoJson(
@@ -87,6 +91,4 @@ def create_folium_map():
         )
         geojson_layer.add_to(m)
     
-    m.save(OUTPUT_MAP)
-    print("\nCarte générée avec succès dans le fichier 'carte_etablissements_par_departement.html'")
     return m
