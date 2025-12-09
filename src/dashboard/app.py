@@ -12,7 +12,7 @@ sys.path.append(cheminProjet)
 from src.map.generate_map import create_folium_map
 from src.graph.generate_graph import create_bubble_chart
 from src.hist.generate_hist import create_histogram
-from src.utils.reference import COL_VALUE, COL_POPULATION
+from src.utils.reference import COL_VALUE, COL_POPULATION, COL_RATIO
 
 # Configuration de l'application
 app = dash.Dash(__name__)
@@ -33,7 +33,7 @@ app.layout = html.Div(children=[
             id='metric-selector',
             options=[
                 {'label': ' Volume Total', 'value': COL_VALUE},
-                {'label': ' Densité (pour 100k hab)', 'value': 'Ratio_100k'},
+                {'label': ' Densité (pour 100k hab)', 'value': COL_RATIO},
                 {'label': ' Population Totale', 'value': COL_POPULATION}
             ],
             value=COL_VALUE,

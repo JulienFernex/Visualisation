@@ -4,7 +4,7 @@ Génère un Histogramme (Bar Chart)
 
 import pandas as pd
 import plotly.express as px
-from src.utils.reference import CLEAN_DATA_PATH, COL_VALUE, COL_POPULATION
+from src.utils.reference import CLEAN_DATA_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 
 def create_histogram(selected_col=COL_VALUE):
     # Chargement des données
@@ -20,6 +20,9 @@ def create_histogram(selected_col=COL_VALUE):
     if selected_col == COL_POPULATION:
         titre = "Classement des départements par population totale"
         label_y = "Population Totale"
+    elif selected_col == COL_POPULATION:
+        titre = "Classement par densité d'établissements (pour 100k hab)"
+        label_y = "Densité / 100k hab"    
     else:
         titre = "Classement des départements par nombre d'établissements"
         label_y = "Nb d'établissements"

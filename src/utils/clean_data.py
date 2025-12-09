@@ -11,15 +11,15 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 try:
-    from .reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION
+    from .reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 except ImportError:
     try:
-        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION
+        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
     except ImportError:
         ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         if ROOT not in __import__('sys').path:
             __import__('sys').path.insert(0, ROOT)
-        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION
+        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 
 # Suppressions des majuscules, accents, tirets et apostrophes du texte
 def normalize_txt(text):
@@ -39,6 +39,12 @@ def clean_etab_to_depart(document_etab):
     df_pop = df_pop[['join_key', COL_POPULATION]]                               # Sélection des colonnes utiles
     df_final = pd.merge(df_counts, df_pop, on='join_key', how='left')           # Fusion des données, le how est nécessaire pour certains département, cf la Vienne
     df_final[COL_POPULATION] = df_final[COL_POPULATION].fillna(0)               # Rempli les NaN par 0, nécessaire à cause de départements d'outre mer
+    
+    # Calcul du ratio
+    df_final[COL_RATIO] = (df_final[COL_VALUE] / df_final[COL_POPULATION]) * 100000     # Ratio pour 100k habitants
+    df_final.loc[df_final[COL_POPULATION] <= 0, COL_RATIO] = 0                          # Correction des NaN par des 0
+    df_final[COL_RATIO] = df_final[COL_RATIO].round(2)                                  # Arrondi de la valeur
+    
     df_final = df_final.drop(columns=['join_key'])                              # Nettoyage de la colonne intermédiaire 
     df_final.to_csv(CLEAN_DATA_PATH, index=False)                               # Sauvegarde
     print("Données nettoyées sauvegardées.")

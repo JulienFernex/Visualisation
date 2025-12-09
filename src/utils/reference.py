@@ -11,6 +11,7 @@ JOIN_KEY_GEOJSON = 'properties.nom'
 # Colonnes de données
 COL_VALUE = 'Nombre_Etablissements'
 COL_POPULATION = 'Population_Totale'
+COL_RATIO = 'Ratio_100k'
 
 # Chemin
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -7,7 +7,7 @@ import folium
 from folium import Element
 import requests
 import unicodedata
-from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, RAW_DATA_PATH, CLEAN_DATA_PATH
+from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 from src.utils.clean_data import normalize_txt
@@ -53,6 +53,9 @@ def create_folium_map(selected_col=COL_VALUE):
     if selected_col == COL_POPULATION:
         legend_label = "Population Totale"
         color = 'YlGnBu'
+    elif selected_col == COL_RATIO:
+        legend_label = "Densité (établissements / 100k hab)"
+        color = 'PuBuGn'
     else:
         legend_label = "Nombre d'Établissements"
         color = 'YlOrRd'
