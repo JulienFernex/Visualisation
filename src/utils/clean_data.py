@@ -6,6 +6,10 @@ import pandas as pd
 import os
 import unicodedata
 
+# Pour supprimer le warning lors de la création du csv
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 try:
     from .reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION
 except ImportError:
@@ -17,12 +21,13 @@ except ImportError:
             __import__('sys').path.insert(0, ROOT)
         from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION
 
-# Suppressions des majuscules, accents et tirets du texte
+# Suppressions des majuscules, accents, tirets et apostrophes du texte
 def normalize_txt(text):
     if not isinstance(text, str):
         return str(text)
     text = unicodedata.normalize('NFD', text).encode('ascii', 'ignore').decode("utf-8")
-    return text.upper().replace('-', ' ').strip()
+    text = text.upper().replace('-', ' ').replace("'", ' ')
+    return " ".join(text.split())
 
 # Nettoie le fichier pour ne faire apapparaître que les départements avec leurs nombres d'établissements sanitaires
 def clean_etab_to_depart(document_etab):
