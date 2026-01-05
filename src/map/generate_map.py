@@ -5,36 +5,46 @@ Génère la carte
 import pandas as pd
 import folium
 from folium import Element
-import requests
 import unicodedata
-from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH
+from functools import lru_cache
+from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 from src.utils.clean_data import normalize_txt
 
-def create_folium_map(selected_col=COL_VALUE):
+
+# Chargements mis en cache pour éviter les téléchargements et lectures répétées
+@lru_cache(maxsize=1)
+def load_geojson():
+    return get_departements_geojson(return_geojson=True)
+
+
+@lru_cache(maxsize=1)
+def load_df_counts():
     try:
-        df_counts = pd.read_csv(CLEAN_DATA_PATH)
+        return pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
-        print("Erreur : Le fichier 'clean_data.csv' est introuvable.")
+        # Génère le fichier propre si manquant
         clean_etab_to_depart(pd.read_csv(RAW_DATA_PATH, sep=';', low_memory=False))
-        exit()
+        return pd.read_csv(CLEAN_DATA_PATH)
+
+def create_folium_map(selected_col=COL_VALUE, department=None):
+    # Charger les données nettoyées et le GeoJSON (mis en cache)
+    df_counts = load_df_counts().copy()
+    geojson_data = load_geojson()
 
     # Préparer les noms des départements pour la jointure avec le GeoJSON
-    df_counts['Nom_Departement_Harmonise'] = df_counts['Libelle_Departement'].str.title().str.replace(' ', '-').str.replace('Et', 'et')
-    lista=get_departements_geojson()
-    
+    lista = sorted([f.get('properties', {}).get('nom') for f in geojson_data.get('features', []) if f.get('properties', {}).get('nom')])
+
     # Dictionnaire avec pour clé le nom normalisé et valeur le nom du GeoJSON
     geo_mapping = {normalize_txt(nom): nom for nom in lista}
 
-    # Retoure le nom du GeoJson s'il existe, sinon on garde l'ancien nom
-    def trouver_nom_officiel(nom_csv):
-        nom_norm = normalize_txt(nom_csv)
-        return geo_mapping.get(nom_norm, nom_csv)
+    # Création d'une clé de jointure normalisée dans le dataframe
+    df_counts['join_key'] = df_counts['Libelle_Departement'].apply(normalize_txt)
 
-    # Application du mapping
-    df_counts['Nom_Departement_Harmonise'] = df_counts['Libelle_Departement'].apply(trouver_nom_officiel)
-    df_counts['Nom_Departement_Harmonise'] = df_counts['Nom_Departement_Harmonise'].str.replace('De ', 'de ').str.replace('Du ', 'du ').str.replace('La ', 'la ')
+    # Application du mapping pour obtenir le nom officiel du GeoJSON si présent
+    df_counts[JOIN_KEY_DATA] = df_counts['join_key'].apply(lambda k: geo_mapping.get(k, k))
+    df_counts[JOIN_KEY_DATA] = df_counts[JOIN_KEY_DATA].astype(str).str.replace('De ', 'de ').str.replace('Du ', 'du ').str.replace('La ', 'la ')
 
     # Initialisation centre de la france
     centre_france = [46.603354, 1.888334]
@@ -60,50 +70,67 @@ def create_folium_map(selected_col=COL_VALUE):
         legend_label = "Nombre d'Établissements"
         color = 'YlOrRd'
 
+    # Filtrer le GeoJSON et les données si un département est sélectionné
+    if department:
+        # Garder uniquement la feature correspondant au département sélectionné
+        filtered_features = [f for f in geojson_data.get('features', []) if f.get('properties', {}).get('nom') == department]
+        geojson_data_filtered = {'type': 'FeatureCollection', 'features': filtered_features}
+    else:
+        geojson_data_filtered = geojson_data
+
+    # folium accepte un dictionnaire GeoJSON; on évite les appels réseau répétitifs
+    key_on = JOIN_KEY_GEOJSON if str(JOIN_KEY_GEOJSON).startswith('feature') else f'feature.{JOIN_KEY_GEOJSON}'
+
+    # Filtrer les données (df_counts) en conséquence
+    if department:
+        df_display = df_counts[df_counts[JOIN_KEY_DATA] == department]
+        if df_display.empty:
+            # Si aucun match en clé, tenter de filtrer par nom non-normalisé
+            df_display = df_counts[df_counts['Libelle_Departement'].str.contains(department, na=False)]
+    else:
+        df_display = df_counts
+
     choropleth = folium.Choropleth( 
-        geo_data=GEOJSON_URL,
+        geo_data=geojson_data_filtered,
         name='Choropleth',
-        data=df_counts,
+        data=df_display,
         columns=[JOIN_KEY_DATA, selected_col],
-        key_on=JOIN_KEY_GEOJSON,
+        key_on=key_on,
         fill_color=color, 
         fill_opacity=0.8,
         line_opacity=0.4,
         legend_name=legend_label,
-        highlight=False
+        highlight=False,
+        
     ).add_to(m)
+    # Ajout des propriétés dynamiques (valeurs) pour les popups en utilisant l'objet GeoJSON en mémoire
+    value_map = dict(zip(df_counts[JOIN_KEY_DATA], df_counts[selected_col]))
+    alias_val = "Population" if selected_col == COL_POPULATION else "Nombre établissements"
 
-    try:
-        geojson_data = requests.get(GEOJSON_URL, timeout=10).json()
-    except Exception as e:
-        print(f"Impossible de récupérer le GeoJSON pour les popups : {e}")
-        geojson_data = None
+    # Ajout des propriétés dynamiques (valeurs) pour les popups en utilisant l'objet GeoJSON en mémoire
+    popup = folium.features.GeoJsonPopup(fields=['nom', 'valeur_dynamique'], aliases=['Département', alias_val], localize=True)
+    tooltip = folium.features.GeoJsonTooltip(fields=['nom'], aliases=['Département'])
 
-    if geojson_data:
-        value_map = dict(zip(df_counts[JOIN_KEY_DATA], df_counts[selected_col]))
+    for feat in geojson_data_filtered.get('features', []):
+        props = feat.setdefault('properties', {})
+        nom = props.get('nom')
+        # Utilise la clé normalisée si nécessaire
+        props['valeur_dynamique'] = value_map.get(nom, 0)
 
-        for feat in geojson_data.get('features', []):
-            props = feat.setdefault('properties', {})
-            nom = props.get('nom')
-            props['valeur_dynamique'] = value_map.get(nom, 0)
-
-        alias_val = "Population" if selected_col == COL_POPULATION else "Nombre établissements"
-        popup = folium.features.GeoJsonPopup(fields=['nom', 'valeur_dynamique'], aliases=['Département', alias_val], localize=True)
-        tooltip = folium.features.GeoJsonTooltip(fields=['nom'], aliases=['Département'])
-
-        geojson_layer = folium.GeoJson(
-            geojson_data,
-            name='Informations départements',
-            style_function=lambda feature: {
-                'fillColor': 'transparent',
-                'color': 'grey',
-                'weight': 0.5,
-                'fillOpacity': 0
-            },
-            highlight_function=lambda feature: {'weight':1, 'color':'black'},
-            tooltip=tooltip,
-            popup=popup,
-        )
-        geojson_layer.add_to(m)
+    geojson_layer = folium.GeoJson(
+        geojson_data_filtered,
+        name='Informations départements',
+        style_function=lambda feature: {
+            'fillColor': 'transparent',
+            'color': 'grey',
+            'weight': 0.5,
+            'fillOpacity': 0
+        },
+        highlight_function=lambda feature: {'weight':1, 'color':'black'},
+        tooltip=tooltip,
+        popup=popup,
+        zoom_on_click=True
+    )
+    geojson_layer.add_to(m)
     
     return m

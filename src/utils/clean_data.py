@@ -11,15 +11,15 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 try:
-    from .reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
+    from .reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, CLEAN_DATA_COMMUNE_PATH
 except ImportError:
     try:
-        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
+        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, CLEAN_DATA_COMMUNE_PATH
     except ImportError:
         ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         if ROOT not in __import__('sys').path:
             __import__('sys').path.insert(0, ROOT)
-        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
+        from src.utils.reference import CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, CLEAN_DATA_COMMUNE_PATH
 
 # Suppressions des majuscules, accents, tirets et apostrophes du texte
 def normalize_txt(text):
@@ -49,7 +49,20 @@ def clean_etab_to_depart(document_etab):
     df_final.to_csv(CLEAN_DATA_PATH, index=False)                               # Sauvegarde
     print("Données nettoyées sauvegardées.")
 
+# Nettoie le fichier pour ne faire apapparaître que les départements avec leurs nombres d'établissements sanitaires
+def clean_etab_to_commune(document_etab):
+    # Compte les établissements par commune, en conservant le département associé
+    df_counts = document_etab.groupby(['Libelle_Departement', 'Libelle_Commune']).size().reset_index(name=COL_VALUE)
+
+    # Création d'une clé de jointure normalisée basée sur le libellé du département
+    df_counts['join_key'] = df_counts['Libelle_Departement'].apply(normalize_txt)
+
+    # Sauvegarde des données nettoyées par commune
+    df_counts.to_csv(CLEAN_DATA_COMMUNE_PATH, index=False)
+    print("Données nettoyées (communes) sauvegardées.")
+
 # Permet de simplement lancer le clean_data sans lancer tout le programme
 if __name__ == "__main__":
     df = pd.read_csv(RAW_DATA_PATH, sep=';', low_memory=False)
     clean_etab_to_depart(df)
+    clean_etab_to_commune(df)

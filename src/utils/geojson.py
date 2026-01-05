@@ -5,6 +5,7 @@ Récupère les données géographiques
 import requests
 import os
 import sys
+import json
 import pandas as pd
 
 try:
@@ -21,28 +22,47 @@ except ImportError:
             sys.path.insert(0, ROOT)
         from src.utils.reference import GEOJSON_URL
 
-def get_departements_geojson(return_df=False):
+def get_departements_geojson(return_df=False, return_geojson=False):
 
-    try:
-        response = requests.get(GEOJSON_URL, timeout=10)
-        response.raise_for_status()
-        geojson_data = response.json()
-    
-    except requests.exceptions.RequestException as e:
-        print(f"Erreur lors du téléchargement du GeoJSON : {e}")
-        exit()
+    # Emplacement du cache local (src/output/departements_geojson.json)
+    cache_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_path = os.path.join(cache_dir, 'departements_geojson.json')
+
+    # Charger depuis le cache si disponible
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'r', encoding='utf-8') as fh:
+                geojson_data = json.load(fh)
+        except Exception as e:
+            print(f"Erreur lors du chargement du GeoJSON depuis le cache : {e}")
+            geojson_data = None
+    else:
+        try:
+            response = requests.get(GEOJSON_URL, timeout=10)
+            response.raise_for_status()
+            geojson_data = response.json()
+            # Sauvegarde dans le cache pour usages futurs
+            try:
+                with open(cache_path, 'w', encoding='utf-8') as fh:
+                    json.dump(geojson_data, fh)
+            except Exception:
+                # Ne pas bloquer l'exécution si l'écriture échoue
+                pass
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur lors du téléchargement du GeoJSON : {e}")
+            exit()
 
     if return_df:
-        # Convertir lesd propriétés GeoJSON en DataFrame pour la jointure
+        # Convertir les propriétés GeoJSON en DataFrame pour la jointure
         features = geojson_data['features']
-        data = [{'code': f['properties']['code'], 'nom': f['properties']['nom']} for f in features]
+        data = [{'code': f['properties'].get('code'), 'nom': f['properties'].get('nom')} for f in features]
         return pd.DataFrame(data)
-    
-    # Retourne la liste triée
-    noms_departements = []
-    for feature in geojson_data['features']:
-        nom = feature['properties']['nom']
-        noms_departements.append(nom)
 
-    noms_departements = sorted(noms_departements)
+    # Retourne la liste triée ou l'objet GeoJSON complet si demandé
+    if return_geojson:
+        return geojson_data
+
+    noms_departements = [f['properties'].get('nom') for f in geojson_data.get('features', [])]
+    noms_departements = sorted([n for n in noms_departements if n])
     return noms_departements
