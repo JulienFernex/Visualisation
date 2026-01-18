@@ -5,9 +5,8 @@ Génère la carte
 import pandas as pd
 import folium
 from folium import Element
-import unicodedata
 from functools import lru_cache
-from src.utils.reference import GEOJSON_URL, JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH
+from src.utils.reference import JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 from src.utils.clean_data import normalize_txt
@@ -34,10 +33,10 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
     geojson_data = load_geojson()
 
     # Préparer les noms des départements pour la jointure avec le GeoJSON
-    lista = sorted([f.get('properties', {}).get('nom') for f in geojson_data.get('features', []) if f.get('properties', {}).get('nom')])
+    noms_departements = sorted([f.get('properties', {}).get('nom') for f in geojson_data.get('features', []) if f.get('properties', {}).get('nom')])
 
     # Dictionnaire avec pour clé le nom normalisé et valeur le nom du GeoJSON
-    geo_mapping = {normalize_txt(nom): nom for nom in lista}
+    geo_mapping = {normalize_txt(nom): nom for nom in noms_departements}
 
     # Création d'une clé de jointure normalisée dans le dataframe
     df_counts['join_key'] = df_counts['Libelle_Departement'].apply(normalize_txt)
@@ -81,19 +80,14 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
     # folium accepte un dictionnaire GeoJSON; on évite les appels réseau répétitifs
     key_on = JOIN_KEY_GEOJSON if str(JOIN_KEY_GEOJSON).startswith('feature') else f'feature.{JOIN_KEY_GEOJSON}'
 
-    # Filtrer les données (df_counts) en conséquence
-    if department:
-        df_display = df_counts[df_counts[JOIN_KEY_DATA] == department]
-        if df_display.empty:
-            # Si aucun match en clé, tenter de filtrer par nom non-normalisé
-            df_display = df_counts[df_counts['Libelle_Departement'].str.contains(department, na=False)]
-    else:
-        df_display = df_counts
+    # Calcul des bornes min/max sur l'ensemble des données
+    vmin = df_counts[selected_col].min()
+    vmax = df_counts[selected_col].max()
 
     choropleth = folium.Choropleth( 
         geo_data=geojson_data_filtered,
         name='Choropleth',
-        data=df_display,
+        data=df_counts, # <--- CORRECTION ICI : On passe toujours le dataset COMPLET pour fixer l'échelle
         columns=[JOIN_KEY_DATA, selected_col],
         key_on=key_on,
         fill_color=color, 
@@ -101,11 +95,18 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
         line_opacity=0.4,
         legend_name=legend_label,
         highlight=False,
-        
+        vmin=vmin,
+        vmax=vmax, 
     ).add_to(m)
+    
     # Ajout des propriétés dynamiques (valeurs) pour les popups en utilisant l'objet GeoJSON en mémoire
     value_map = dict(zip(df_counts[JOIN_KEY_DATA], df_counts[selected_col]))
-    alias_val = "Population" if selected_col == COL_POPULATION else "Nombre établissements"
+    if selected_col == COL_POPULATION:
+        alias_val = "Population"
+    elif selected_col == COL_RATIO:
+        alias_val = "Densité / 100k hab"
+    else:
+        alias_val = "Nombre établissements"
 
     # Ajout des propriétés dynamiques (valeurs) pour les popups en utilisant l'objet GeoJSON en mémoire
     popup = folium.features.GeoJsonPopup(fields=['nom', 'valeur_dynamique'], aliases=['Département', alias_val], localize=True)
@@ -115,7 +116,8 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
         props = feat.setdefault('properties', {})
         nom = props.get('nom')
         # Utilise la clé normalisée si nécessaire
-        props['valeur_dynamique'] = value_map.get(nom, 0)
+        if nom:
+            props['valeur_dynamique'] = value_map.get(nom, 0)
 
     geojson_layer = folium.GeoJson(
         geojson_data_filtered,
@@ -126,7 +128,6 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
             'weight': 0.5,
             'fillOpacity': 0
         },
-        highlight_function=lambda feature: {'weight':1, 'color':'black'},
         tooltip=tooltip,
         popup=popup,
         zoom_on_click=True

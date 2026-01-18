@@ -15,92 +15,117 @@ from src.hist.generate_hist import create_histogram
 from src.utils.reference import COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.geojson import get_departements_geojson
 
-# Configuration de l'application
-app = dash.Dash(__name__)
+# Importation de la police Google Fonts
+external_stylesheets = ['https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap']
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+# Styles CSS
+# Style pour les Cartes : Blocs blancs avec ombre et arrondis
+STYLE_CARD = {
+    'backgroundColor': 'white',
+    'borderRadius': '15px',
+    'boxShadow': '0 4px 6px rgba(0,0,0,0.1)',
+    'padding': '20px',
+    'border': '1px solid #f0f0f0'
+}
+
+# Style du conteneur principal : Fond gris clair
+STYLE_CONTAINER = {
+    'fontFamily': 'Montserrat, sans-serif',
+    'backgroundColor': '#f8f9fa',
+    'padding': '30px',
+    'minHeight': '100vh',
+    'color': '#333'
+}
 
 # Mise en page du dashboard
 app.layout = html.Div(children=[
     
-    # Entête
-    html.H1("DashBoard : Etude de la répartition des établissements de santé", 
-            style={'textAlign': 'center', 'color': 'black', 'marginBottom': '10px'}),
-    
-    html.Div("Cette étude se concentre sur le territoire de France métropolitaine (bien qu'en l'état certains départements d'outre mer sont pris en compte)", 
-             style={'textAlign': 'center', 'marginBottom': '30px', 'fontSize': '18px', 'color': 'Gray'}),
-
+    # En tête
     html.Div([
-        html.Label("Choisir la métrique à visualiser :", style={'fontWeight': 'bold', 'marginRight': '10px'}),
-        dcc.RadioItems(
-            id='metric-selector',
-            options=[
-                {'label': ' Volume Total', 'value': COL_VALUE},
-                {'label': ' Densité (pour 100k hab)', 'value': COL_RATIO},
-                {'label': ' Population Totale', 'value': COL_POPULATION}
-            ],
-            value=COL_VALUE,
-            inline=True,
-            labelStyle={'display': 'inline-block', 'marginRight': '15px', 'cursor': 'pointer'}
-        )
-    ], style={'textAlign': 'center', 'padding': '15px', 'backgroundColor': '#f9f9f9', 'marginBottom': '20px'}),
-
-    # Filtre par département
-    html.Div([
-        html.Label("Filtrer par département :", style={'fontWeight': 'bold', 'marginRight': '10px'}),
-        dcc.Dropdown(
-            id='department-selector',
-            options=[{'label': name, 'value': name} for name in get_departements_geojson()],
-            value=None,
-            placeholder='Tous les départements',
-            clearable=True,
-            style={'width': '50%', 'margin': '0 auto'}
-        )
-    ], style={'textAlign': 'center', 'padding': '5px', 'marginBottom': '20px'}),
-
-    # Carte
-    html.Div([
-        html.H3("Carte des Établissements par Département", style={'textAlign': 'center'}),
+        html.H1("Répartition des Établissements de Santé", 
+                style={'textAlign': 'center', 'color': '#2c3e50', 'marginBottom': '10px', 'fontWeight': '700'}),
         
-        # Affichage du HTML de Folium avec le composant Iframe (spinner lors du chargement)
-        dcc.Loading(
-            id='loading-map',
-            type='circle',
-            children=html.Iframe(
-                id='folium-map',
-                srcDoc=create_folium_map(COL_VALUE).get_root().render(),  # Injection du HTML de la carte
-                style={'width': '100%', 'height': '600px', 'border': 'none'}
-            ),
-            style={'width': '100%', 'height': '600px', 'display': 'block'}
-        )
-    ], style={'width': '98%','marginBottom': '30px', 'boxShadow': '0px 0px 5px #ccc', 'padding': '15px', 'backgroundColor': 'white'}),
+        html.Div("Analyse territoriale : France métropolitaine et DROM", 
+                 style={'textAlign': 'center', 'marginBottom': '0px', 'fontSize': '16px', 'color': '#7f8c8d'}),
+    ], style={**STYLE_CARD, 'marginBottom': '30px'}),
 
-    # ZONE AVEC LE GRAPHIQUE ET l'HISTOGRAMME
+    # Bloc cartes et sélecteurs
     html.Div([
-        # Colonne Gauche : Graphique
+        
+        # Zone des sélecteurs (Gauche)
         html.Div([
-            html.H3("Graphique à bulles", style={'textAlign': 'center'}),
+            html.H3("Contrôles", style={'marginTop': '0', 'color': '#2c3e50'}),
+            html.Label("Métrique :", style={'fontWeight': 'bold', 'display': 'block', 'marginBottom': '10px'}),
+            dcc.RadioItems(
+                id='metric-selector',
+                options=[
+                    {'label': "Nombre d'établissements", 'value': COL_VALUE},
+                    {'label': 'Population Totale', 'value': COL_POPULATION},
+                    {'label': "Densité (pour 100k hab)", 'value': COL_RATIO}
+                ],
+                value=COL_VALUE,
+                labelStyle={'display': 'block', 'marginBottom': '8px', 'cursor': 'pointer'}
+            ),
+            
+            html.Br(),
+            
+            html.Label("Département :", style={'fontWeight': 'bold', 'display': 'block', 'marginBottom': '10px'}),
+            dcc.Dropdown(
+                id='department-selector',
+                # Récupère directement la liste des noms (déjà triée par get_departements_geojson)
+                options=[{'label': d, 'value': d} for d in get_departements_geojson()],
+                placeholder="Sélectionnez un département",
+                style={'width': '100%'}
+            ),
+            
+            html.Div("Sélectionnez un département pour voir le détail par commune.", style={'fontSize': '12px', 'color': 'grey', 'marginTop': '10px'})
+
+        ], style={**STYLE_CARD, 'width': '28%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
+
+        # Zone Carte (Droite)
+        html.Div([
+            dcc.Loading(
+                id='loading-map',
+                type='dot',
+                color='#3498db',
+                children=html.Iframe(
+                    id='folium-map', 
+                    srcDoc=create_folium_map().get_root().render(), 
+                    width='100%', 
+                    height='600',
+                    style={'border': 'none', 'borderRadius': '15px'} 
+                ),
+                style={'height': '600px'} # Assure que le loading est centré dans la zone
+            )
+        ], style={**STYLE_CARD, 'width': '66%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0px'}),
+
+    ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+
+    # Bloc des graphiques
+    html.Div([
+        
+        # Graphique à bulles
+        html.Div([
             dcc.Loading(
                 id='loading-bubble',
                 type='dot',
-                children=dcc.Graph(   # dcc.Graph pour Plotly
+                color='#3498db',
+                children=dcc.Graph(
                     id='bubble-chart',
                     figure=create_bubble_chart(COL_VALUE),
                     style={'height': '600px'}
                 ),
                 style={'height': '600px'}
             )
-        ], style={'width': '47%', 'display': 'inline-block', 'verticalAlign': 'top', 'boxShadow': '0px 0px 5px #ccc', 'padding': '15px', 'backgroundColor': 'white'}),
+        ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
 
-        # Espace entre les deux zones
-        html.Div(style={'width': '2%', 'display': 'inline-block'}),
-
-        # Colonne Droite : Histogramme
+        # Histogramme
         html.Div([
-            html.H3("Histogramme", style={'textAlign': 'center'}),
-            
-            # Intégration de l'histogramme ici
             dcc.Loading(
                 id='loading-hist',
                 type='dot',
+                color='#3498db',
                 children=dcc.Graph(
                     id='histogram-chart',
                     figure=create_histogram(COL_VALUE),
@@ -108,10 +133,12 @@ app.layout = html.Div(children=[
                 ),
                 style={'height': '600px'}
             )
-        ], style={'width': '47%', 'display': 'inline-block', 'verticalAlign': 'top', 'boxShadow': '0px 0px 5px #ccc', 'padding': '15px', 'backgroundColor': 'white'})
+        ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'})
 
-    ], style={'marginBottom': '30px'}),
-])
+    ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+
+], style=STYLE_CONTAINER)
+
 
 # Quand le RadioItems change, tout se met à jour
 @app.callback(
@@ -121,16 +148,19 @@ app.layout = html.Div(children=[
     [Input('metric-selector', 'value'),
      Input('department-selector', 'value')]
 )
-def update_dashboard(selected_metric, selected_department):    # Appellée automatiquement quand un input change
+def update_dashboard(selected_metric, selected_department):
     # Si aucun département sélectionné (None ou ''), on affiche tous
     dept = selected_department if selected_department else None
+    
+    # Génération des mises à jour
     map_obj = create_folium_map(selected_metric, department=dept)
     map_html = map_obj.get_root().render()
+    
     bubble_fig = create_bubble_chart(selected_metric, department=dept)
     hist_fig = create_histogram(selected_metric, department=dept)
-
+    
     return map_html, bubble_fig, hist_fig
 
-# Lancement du serveur
+# Lancer l'application
 if __name__ == '__main__':
     app.run(debug=True)
