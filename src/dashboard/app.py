@@ -11,7 +11,7 @@ sys.path.append(cheminProjet)
 # Importation des fonctions et données générérant les représentations de données
 from src.map.generate_map import create_folium_map
 from src.graph.generate_graph import create_bubble_chart
-from src.hist.generate_hist import create_histogram
+from src.hist.generate_hist import create_histogram, create_population_distribution_histogram, create_population_distribution_pie
 from src.utils.reference import COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.geojson import get_departements_geojson
 
@@ -137,6 +137,41 @@ app.layout = html.Div(children=[
 
     ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
 
+    # Bloc de l'histogramme et camembert de distribution
+    html.Div([
+        
+        # Histogramme de distribution
+        html.Div([
+            dcc.Loading(
+                id='loading-dist-hist',
+                type='dot',
+                color='#3498db',
+                children=dcc.Graph(
+                    id='distribution-histogram-chart',
+                    figure=create_population_distribution_histogram(),
+                    style={'height': '600px'}
+                ),
+                style={'height': '600px'}
+            )
+        ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
+
+        # Camembert de distribution
+        html.Div([
+            dcc.Loading(
+                id='loading-dist-pie',
+                type='dot',
+                color='#3498db',
+                children=dcc.Graph(
+                    id='distribution-pie-chart',
+                    figure=create_population_distribution_pie(),
+                    style={'height': '600px'}
+                ),
+                style={'height': '600px'}
+            )
+        ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'})
+
+    ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+
 ], style=STYLE_CONTAINER)
 
 
@@ -144,7 +179,9 @@ app.layout = html.Div(children=[
 @app.callback(
     [Output('folium-map', 'srcDoc'),
      Output('bubble-chart', 'figure'),
-     Output('histogram-chart', 'figure')],
+     Output('histogram-chart', 'figure'),
+     Output('distribution-histogram-chart', 'figure'),
+     Output('distribution-pie-chart', 'figure')],
     [Input('metric-selector', 'value'),
      Input('department-selector', 'value')]
 )
@@ -158,8 +195,10 @@ def update_dashboard(selected_metric, selected_department):
     
     bubble_fig = create_bubble_chart(selected_metric, department=dept)
     hist_fig = create_histogram(selected_metric, department=dept)
+    dist_hist_fig = create_population_distribution_histogram(selected_metric)
+    dist_pie_fig = create_population_distribution_pie(selected_metric)
     
-    return map_html, bubble_fig, hist_fig
+    return map_html, bubble_fig, hist_fig, dist_hist_fig, dist_pie_fig
 
 # Lancer l'application
 if __name__ == '__main__':
