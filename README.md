@@ -17,13 +17,13 @@ Ce dépôt contient un tableau de bord interactif de visualisation de données.
 - **Lancer le dashboard** :
 
 	```bash
-	python src/main.py
+	python main.py
 	```
 
 - **Accéder** : ouvrir http://127.0.0.1:8050 dans un navigateur.
 
 - **Déployer sur une autre machine** :
-	- Copier le dépôt ou cloner le repo.
+	- Copier le dépôt via un zip ou cloner le repo.
 	- Reproduire les étapes d'installation ci-dessus.
 
 ## Data
