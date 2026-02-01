@@ -7,25 +7,23 @@ Ce dépôt GitHub contient le dashboard interactif de visualisation de données.
 - **Prérequis**: Python 3.10+ et `pip`.
 - **Installation**:
 
-   - Créer un environnement virtuel :
-   	```bash
-      python -m venv .venv
-      ```
-   - Activer l'environnement : 
-      - Sur Windows :
-         ```bash
-         .venv\Scripts\activate
-         ```
-      - Sur Mac/Linux :
-         ```bash
-         source .venv/bin/activate
-         ```
-
-      - Mettre à jour pip et installer les dépendances :
-         ```bash
-         pip install --upgrade pip
-         pip install -r requirements.txt
-         ```
+   Créer un environnement virtuel :
+   ```bash
+   python -m venv .venv
+   ```
+   Activer l'environnement sur Windows :
+   ```bash
+   .venv\Scripts\activate
+   ```
+   Activer l'environnementur Mac/Linux :
+   ```bash
+   source .venv/bin/activate
+   ```
+   Mettre à jour pip et installer les dépendances :
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
 
 - **Lancer le dashboard** :
 
