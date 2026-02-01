@@ -55,11 +55,9 @@ Le diagramme suivant illustre la structure de l'application :
 
 ```mermaid
 graph TD
-    %% --- Noeuds (Fichiers) ---
     Main("main.py")
     Config("config.py")
 
-    %% --- Sous-dossiers (avec saut de ligne pour l'espacement) ---
     subgraph Pages ["Dossier src/pages<br/>"]
         Dash("dashboard.py")
     end
@@ -78,18 +76,13 @@ graph TD
         GeoJson("geojson.py")
     end
     
-    %% --- Données ---
     DataRaw[("Data Raw")]
     DataClean[("Data Clean")]
 
-    %% --- Styles (Transparence et pointillés uniquement) ---
     style Pages fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
     style Composants fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
     style Utils fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
     
-    %% (Plus de style forcé pour DataRaw/Clean, ils seront de la couleur par défaut)
-
-    %% --- Relations ---
     Main --> Dash
     
     Dash --> Map
@@ -105,7 +98,6 @@ graph TD
     CleanData --> DataClean
     DataClean -.-> Dash
 
-    %% Relations Config (Pointillés discrets)
     Config -.-> Main
     Config -.-> Dash
     Config -.-> Utils
