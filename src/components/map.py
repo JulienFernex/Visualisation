@@ -6,7 +6,7 @@ import pandas as pd
 import folium
 from folium import Element
 from functools import lru_cache
-from config import JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH
+from config import JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH, METRIC_COLORS
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 from src.utils.clean_data import normalize_txt
@@ -16,7 +16,7 @@ from src.utils.clean_data import normalize_txt
 def load_geojson():
     """
     Charge le fichier GeoJSON des départements en mémoire cache pour 
-    éviter de re-télécharger ou relire le fichier à chaque refresh.
+    éviter de relire le fichier à chaque refresh.
     """
     return get_departements_geojson(return_geojson=True)
 
@@ -71,13 +71,11 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
     # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         legend_label = "Population Totale"
-        color = 'YlGnBu'
     elif selected_col == COL_RATIO:
         legend_label = "Densité (établissements / 100k hab)"
-        color = 'PuBuGn'
     else:
         legend_label = "Nombre d'Établissements"
-        color = 'YlOrRd'
+    color = METRIC_COLORS.get(selected_col, 'YlOrRd')
 
     # Filtrage (Si un département est sélectionné)
     if department:

@@ -51,6 +51,66 @@ Les différents jeux de données contiennent les informations d'établissements 
 
 ## Developer Guide
 
+Le diagramme suivant illustre la structure de l'application :
+
+```mermaid
+graph TD
+    %% --- Noeuds (Fichiers) ---
+    Main("main.py")
+    Config("config.py")
+
+    %% --- Sous-dossiers (avec saut de ligne pour l'espacement) ---
+    subgraph Pages ["Dossier src/pages<br/>"]
+        Dash("dashboard.py")
+    end
+
+    subgraph Composants ["Dossier src/components<br/>"]
+        Map("map.py")
+        Bar("bar_chart.py")
+        Bubble("bubble_chart.py")
+        Dist("dist_hist.py")
+        Pie("pie_chart.py")
+    end
+
+    subgraph Utils ["Dossier src/utils<br/>"]
+        GetData("get_data.py")
+        CleanData("clean_data.py")
+        GeoJson("geojson.py")
+    end
+    
+    %% --- Données ---
+    DataRaw[("Data Raw")]
+    DataClean[("Data Clean")]
+
+    %% --- Styles (Transparence et pointillés uniquement) ---
+    style Pages fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style Composants fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style Utils fill:none,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    
+    %% (Plus de style forcé pour DataRaw/Clean, ils seront de la couleur par défaut)
+
+    %% --- Relations ---
+    Main --> Dash
+    
+    Dash --> Map
+    Dash --> Bar
+    Dash --> Bubble
+    Dash --> Dist
+    Dash --> Pie
+
+    Map -.-> GeoJson
+    
+    GetData --> DataRaw
+    DataRaw --> CleanData
+    CleanData --> DataClean
+    DataClean -.-> Dash
+
+    %% Relations Config (Pointillés discrets)
+    Config -.-> Main
+    Config -.-> Dash
+    Config -.-> Utils
+```
+
 Architecture principale :
 
 - `main.py` : point d'entrée qui lance le serveur Dash.

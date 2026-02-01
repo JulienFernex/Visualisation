@@ -5,7 +5,7 @@ Génère le Camembert de Distribution (Pie Chart)
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
+from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, METRIC_COLORS
 from src.utils.clean_data import normalize_txt
 
 def create_pie_chart(selected_col=COL_POPULATION, department=None):
@@ -21,12 +21,7 @@ def create_pie_chart(selected_col=COL_POPULATION, department=None):
     """
 
     # Choix de l'échelle de couleur
-    if selected_col == COL_POPULATION:
-        color_scale = 'YlGnBu' 
-    elif selected_col == COL_RATIO:
-        color_scale = 'PuBuGn'
-    else:
-        color_scale = 'YlOrRd' 
+    color_scale = METRIC_COLORS.get(selected_col, 'YlOrRd')
     
     df = pd.DataFrame()
     entity_name = "Département"
