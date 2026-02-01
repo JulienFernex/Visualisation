@@ -35,7 +35,7 @@ def load_df_counts():
 
 def create_folium_map(selected_col=COL_VALUE, department=None):
     """
-    Crée une carte choroplèthe interactive Folium..
+    Crée une carte choroplèthe interactive Folium.
 
     Args:
         selected_col: Colonne de données à visualiser.
@@ -43,7 +43,6 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
     Returns:
         Carte Folium.
     """
-
     # Charger les données nettoyées et le GeoJSON (mis en cache)
     df_counts = load_df_counts().copy()
     geojson_data = load_geojson()

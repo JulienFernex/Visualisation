@@ -7,20 +7,25 @@ Ce dépôt GitHub contient le dashboard interactif de visualisation de données.
 - **Prérequis**: Python 3.10+ et `pip`.
 - **Installation**:
 
-	```bash
-      Créer un environnement virtuel :
-      - python -m venv .venv
-
-      Activer l\'environnement : 
+   - Créer un environnement virtuel :
+   	```bash
+      python -m venv .venv
+      ```
+   - Activer l'environnement : 
       - Sur Windows :
-        - .venv\Scripts\activate
+         ```bash
+         .venv\Scripts\activate
+         ```
       - Sur Mac/Linux :
-        - source .venv/bin/activate
+         ```bash
+         source .venv/bin/activate
+         ```
 
-      Mettre à jour pip et installer les dépendances :
-      - pip install --upgrade pip
-      - pip install -r requirements.txt
-	```
+      - Mettre à jour pip et installer les dépendances :
+         ```bash
+         pip install --upgrade pip
+         pip install -r requirements.txt
+         ```
 
 - **Lancer le dashboard** :
 
@@ -32,7 +37,10 @@ Ce dépôt GitHub contient le dashboard interactif de visualisation de données.
 - **Accéder** : ouvrir http://127.0.0.1:8050 dans un navigateur.
 
 - **Déployer sur une autre machine** :
-	- Copier le dépôt via un zip ou cloner le repo via la commande : `git clone https://github.com/JulienFernex/Visualisation.git`
+	- Copier le dépôt via un zip ou cloner le repo via la commande : 
+      ```bash
+      git clone https://github.com/JulienFernex/Visualisation.git
+      ```
 	- Reproduire les étapes d'installation ci-dessus.
 
 ## Data
@@ -47,7 +55,7 @@ Les fichiers de données se trouvent dans le dossier `data` :
   - `data/cleaned/clean_data.csv` : données nettoyées des départements.
   - `data/cleaned/clean_data_commune.csv` : données nettoyées des communes.
 
-Les différents jeux de données contiennent les informations d'établissements (localisation, département, type d'établissement, etc...) ainsi que les données de population. Le fichier `src/utils/clean_data.py` contient la logique de nettoyage des données.
+Les différents jeux de données contiennent les informations d'établissements (localisation, département, type d'établissement, etc.) ainsi que les données de population. Le fichier `src/utils/clean_data.py` contient la logique de nettoyage des données.
 
 ## Developer Guide
 
@@ -132,17 +140,17 @@ Ajouter un graphique :
 
 **Principales conclusions :**
 
-- **Volume vs Densité** : Cette visualisation permet de nettement distinguer les zones à forte concentration d'établissements de santé, corrélées aux grands pôles urbains, des zones à forte densité relative d'établissements santé comparativement à leurs populations (métrique du ratio pour 100k habitants). Cette double lecture permet d'identifier plus finement les disparités de couverture territoriale.
+- **Volume vs Densité** : Cette visualisation permet de nettement distinguer les zones à forte concentration d'établissements de santé, corrélées aux grands pôles urbains, des zones à forte densité relative d'établissements de santé comparativement à leurs populations (métrique du ratio pour 100k habitants). Cette double lecture permet d'identifier plus finement les disparités de couverture territoriale.
 - **Maillage territorial** : La visualisation multi-échelles (Département sur la carte et les graphiques vers Commune d'un département donné sur les graphiques) met en évidence que certaines zones rurales, bien que disposant de moins d'établissements en valeur absolue, peuvent présenter un maillage de proximité supérieur à celui de certains pôles urbains, rapporté à leur population.
 
 ## Copyright / Déclaration d'originalité
 
-Nous déclarons sur l'honneur que le code fourni a été produit par nous-même, à l'exception des lignes ci-dessous :
+Nous déclarons sur l'honneur que le code fourni a été produit par nous-mêmes, à l'exception des lignes ci-dessous :
 
 - Ligne(s) / groupe(s) de lignes empruntée(s) :
 	- Référence de la source : Aucune extraction majeure d'un tiers (seules les différentes documentations des outils ont été utilisées).
      - L'optimisation via l'usage du @lru_cache est basée sur le site : https://realpython.com/lru-cache-python/ 
-	- Explication : L'ensemble du projet a été développé en s'appuyant sur la documentation officielle des bibliothèques utilisées (Dash, Pandas, Folium)
+	- Explication : L'ensemble du projet a été développé en s'appuyant sur la documentation officielle des bibliothèques utilisées (Dash, Pandas, Folium).
 
 Toute ligne non déclarée ci-dessus est réputée être produite par les auteurs du projet. L'absence ou l'omission de déclaration sera considérée comme du plagiat.
 

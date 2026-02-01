@@ -1,5 +1,5 @@
 """
-Génère l'Histogramme principal de classement (Bar Chart)Z
+Génère l'Histogramme principal de classement (Bar Chart)
 """
 
 import pandas as pd
@@ -17,7 +17,6 @@ def create_bar_chart(selected_col=COL_VALUE, department=None):
     Returns:
         Figure Plotly.
     """
-
     # Choix de l'échelle de couleur
     color_scale = METRIC_COLORS.get(selected_col, 'YlOrRd')
 

@@ -5,7 +5,7 @@ Génère l'Histogramme de Distribution (répartition par plages de valeurs)
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, METRIC_COLORS
+from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_POPULATION, COL_RATIO, METRIC_COLORS
 from src.utils.clean_data import normalize_txt
 
 def create_dist_hist(selected_col=COL_POPULATION, department=None):
@@ -18,8 +18,7 @@ def create_dist_hist(selected_col=COL_POPULATION, department=None):
         department: Filtre départemental (optionnel).
     Returns:
         Figure Plotly.
-    """
-        
+    """   
     # Choix de l'échelle de couleur
     color_scale = METRIC_COLORS.get(selected_col, 'YlOrRd')
 
