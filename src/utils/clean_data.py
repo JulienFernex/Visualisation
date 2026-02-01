@@ -1,24 +1,14 @@
 """
-Nettoie les données brutes et les exporte dans data/cleaned/
+Module de nettoyage et transformation des données, convertit les fichiers raw en fichiers CSV propres pour le Dashboard.
 """
+
 import pandas as pd
 import os
-import sys
 import unicodedata
 import re
 import warnings
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from config import (
-    CLEANED_DIR,
-    CLEAN_DATA_PATH, 
-    RAW_DATA_PATH, 
-    RAW_POPULATION_PATH, 
-    COL_VALUE, 
-    COL_POPULATION, 
-    COL_RATIO, 
-    CLEAN_DATA_COMMUNE_PATH
-)
+from config import CLEANED_DIR, CLEAN_DATA_PATH, RAW_DATA_PATH, RAW_POPULATION_PATH, COL_VALUE, COL_POPULATION, COL_RATIO, CLEAN_DATA_COMMUNE_PATH
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", pd.errors.DtypeWarning)
@@ -36,6 +26,10 @@ NEW_COLUMN_NAMES = [
 ]
 
 def normalize_txt(text):
+    """
+    Standardise une chaîne de caractères pour faciliter les correspondances en Supprimant les accents, 
+    mettant en majuscules et gèrant les séparateurs.
+    """
     if not isinstance(text, str):
         return str(text)
     text = unicodedata.normalize('NFD', text).encode('ascii', 'ignore').decode("utf-8")
@@ -44,20 +38,24 @@ def normalize_txt(text):
 
 def load_and_rename_raw_data():
     """
-    Charge le CSV en forçant les 32 colonnes et en filtrant les lignes inutiles.
+    Charge le fichier CSV brut FINESS, qui a une première ligne technique (4 colonnes) 
+    qui diffère des données réelles (32 colonnes), on force donc le schéma.
+    
+    Returns:
+        Le dataframe avec les bonnes colonnes et filtré sur les établissements.
     """
     print(f"Chargement de {RAW_DATA_PATH}...")
     
-    # On force les noms de colonnes (names=...) pour que Pandas n'utilise pas la première ligne (qui n'en a que 4)
+    # On force les noms de colonnes et on ignore l'entête
     try:
         df = pd.read_csv(
             RAW_DATA_PATH, 
             sep=';', 
             encoding='iso-8859-1', 
-            header=None,           # Indique que la première ligne n'est pas l'entête
+            header=None,
             names=NEW_COLUMN_NAMES, 
             low_memory=False,
-            on_bad_lines='skip' # Ignore les lignes mal formées
+            on_bad_lines='skip'
         )
     except UnicodeDecodeError:
         df = pd.read_csv(
@@ -70,8 +68,7 @@ def load_and_rename_raw_data():
             on_bad_lines='skip'
         )
 
-    # Filtrage : On ne garde que les lignes qui commencent par 'structureet'
-    # Cela élimine la première ligne (finess;etalab...) et les lignes de géolocalisation
+    # Filtrage des lignes techniques (métadonnées)
     if 'Type_Ligne' in df.columns:
         df = df[df['Type_Ligne'] == 'structureet'].copy()
         print(f"Données filtrées : {len(df)} établissements trouvés.")
@@ -79,6 +76,9 @@ def load_and_rename_raw_data():
     return df
 
 def clean_etab_to_depart(document_etab):
+    """
+    Agrège les données par Département et croise avec la population INSEE en génère le fichier 'clean_data.csv'.
+    """
     print("Nettoyage des données départementales...")
     
     df_counts = document_etab.groupby('Libelle_Departement').size().reset_index(name=COL_VALUE)
@@ -94,6 +94,7 @@ def clean_etab_to_depart(document_etab):
              print("Erreur: Impossible de trouver l'onglet 'Départements' ou 'DEP' dans le fichier population.")
              return
 
+    # Agrégation
     df_pop['join_key'] = df_pop['Nom du département'].apply(normalize_txt)
     df_pop = df_pop.rename(columns={'Population totale': COL_POPULATION})
     df_pop = df_pop[['join_key', COL_POPULATION]]
@@ -109,12 +110,14 @@ def clean_etab_to_depart(document_etab):
     
     df_final = df_final.drop(columns=['join_key'])
     
-    # Sauvegarde
     os.makedirs(CLEANED_DIR, exist_ok=True)
     df_final.to_csv(CLEAN_DATA_PATH, index=False)
     print(f"Sauvegardé : {CLEAN_DATA_PATH}")
 
 def clean_libelle_commune(text):
+    """
+    Nettoie spécifiquement les noms de communes.
+    """
     if not isinstance(text, str):
         return ""
     parts = text.split(' ', 1)
@@ -129,6 +132,9 @@ def clean_libelle_commune(text):
     return text.strip()
 
 def clean_etab_to_commune(document_etab):
+    """
+    Agrège les données par Commune en génèrant le fichier 'clean_data_commune.csv'.
+    """
     print("Nettoyage des données communales...")
     df = document_etab.copy()
     
@@ -140,11 +146,13 @@ def clean_etab_to_commune(document_etab):
     df = df.sort_values(by=['Libelle_Departement', 'cleaned_name', 'name_len'])
     df = df.drop(columns=['name_len'])
 
+    # Agrégation : Compte par couple (Département, Commune)
     df_counts = df.groupby(['Libelle_Departement', 'cleaned_name']).agg(
         Libelle_Commune=('Libelle_Commune', 'first'),
         Nombre_Etablissements=('Libelle_Commune', 'count')
     ).reset_index()
 
+    # Chargement Population Communes (INSEE)
     try:
         df_ref_dept = pd.read_excel(RAW_POPULATION_PATH, sheet_name='Départements', skiprows=7)
         df_pop = pd.read_excel(RAW_POPULATION_PATH, sheet_name='Communes', skiprows=7)
@@ -156,11 +164,13 @@ def clean_etab_to_commune(document_etab):
 
     df_pop['Dept_Name'] = df_pop['Code département'].astype(str).map(code_to_name)
     
+    # Normalisation pour la recherche
     df_pop['nom_dept_norm'] = df_pop['Dept_Name'].apply(normalize_txt)
     df_pop['nom_commune_norm'] = df_pop['Nom de la commune'].apply(normalize_txt)
     
     pop_lookup = dict(zip(zip(df_pop['nom_dept_norm'], df_pop['nom_commune_norm']), df_pop['Population totale']))
     
+    # Lookup hiérarchique pour recherche approximative
     dept_lookup = {}
     for _, row in df_pop.iterrows():
         d, c, p = row['nom_dept_norm'], row['nom_commune_norm'], row['Population totale']
@@ -173,9 +183,14 @@ def clean_etab_to_commune(document_etab):
     df_counts['c_norm'] = df_counts['clean_comm'].apply(normalize_txt)
     
     def get_population(row):
+        """
+        Fonction interne de matching
+        """
         d, c = row['d_norm'], row['c_norm']
+        # Essai correspondance exacte
         if (d, c) in pop_lookup:
             return pop_lookup[(d, c)]
+        # Essai correspondance partielle
         if d in dept_lookup:
             candidates = dept_lookup[d]
             for real_name, pop in candidates.items():
@@ -185,6 +200,7 @@ def clean_etab_to_commune(document_etab):
 
     df_counts[COL_POPULATION] = df_counts.apply(get_population, axis=1)
 
+    # Calcul Densité
     df_counts[COL_RATIO] = (df_counts[COL_VALUE] / df_counts[COL_POPULATION]) * 100000
     df_counts.loc[df_counts[COL_POPULATION] <= 0, COL_RATIO] = 0
     df_counts[COL_RATIO] = df_counts[COL_RATIO].round(2)

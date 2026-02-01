@@ -1,6 +1,7 @@
 """
-Contient les constantes du projet
+Module de configuration centrale, définit les chemins absolus, les URLs des sources et les constantes globales du code.
 """
+
 import os
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,3 +30,8 @@ COL_POPULATION = 'Population_Totale'
 COL_RATIO = 'Ratio_100k'
 JOIN_KEY_DATA = 'Nom_Departement_Harmonise'
 JOIN_KEY_GEOJSON = 'properties.nom'
+METRIC_COLORS = {
+    COL_POPULATION: 'YlGnBu',
+    COL_RATIO: 'PuBuGn',
+    COL_VALUE: 'YlOrRd'
+}

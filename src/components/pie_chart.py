@@ -5,14 +5,21 @@ Génère le Camembert de Distribution (Pie Chart)
 import pandas as pd
 import plotly.express as px
 import numpy as np
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.clean_data import normalize_txt
 
 def create_pie_chart(selected_col=COL_POPULATION, department=None):
+    """
+    Génère un graphique en camembert (Pie Chart) montrant la répartition des entités
+    par plages de valeurs.
+
+    Args:
+        selected_col: Métrique analysée.
+        department: Filtre départemental (optionnel).
+    Returns:
+        Figure Plotly.
+    """
+
     # Choix de l'échelle de couleur
     if selected_col == COL_POPULATION:
         color_scale = 'YlGnBu' 
@@ -24,6 +31,7 @@ def create_pie_chart(selected_col=COL_POPULATION, department=None):
     df = pd.DataFrame()
     entity_name = "Département"
 
+    # Vue Départementale (Communes)
     if department:
         try:
             df_comm = pd.read_csv(CLEAN_DATA_COMMUNE_PATH)
@@ -34,7 +42,8 @@ def create_pie_chart(selected_col=COL_POPULATION, department=None):
             titre_suffixe = f"Communes (Département : {department})"
         except FileNotFoundError:
             pass
-            
+
+    # Vue Nationale par défaut (Départements)      
     if df.empty:
         try:
             df = pd.read_csv(CLEAN_DATA_PATH)
@@ -43,7 +52,7 @@ def create_pie_chart(selected_col=COL_POPULATION, department=None):
         except FileNotFoundError:
             return px.pie(title="Données non trouvées")
     
-    # Configuration des titres
+    # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         titre = f"Répartition du nombre de {titre_suffixe} par Plage de Population"
         range_label = "Plage de Population"

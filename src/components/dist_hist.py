@@ -4,15 +4,22 @@ Génère l'Histogramme de Distribution (répartition par plages de valeurs)
 
 import pandas as pd
 import plotly.express as px
-import sys
-import os
 import numpy as np
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.clean_data import normalize_txt
 
 def create_dist_hist(selected_col=COL_POPULATION, department=None):
+    """
+    Génère un histogramme montrant la distribution des entités (Communes ou Départements)
+    selon des plages de valeurs.
+
+    Args:
+        selected_col: Métrique analysée.
+        department: Filtre départemental (optionnel).
+    Returns:
+        Figure Plotly.
+    """
+        
     # Choix de l'échelle de couleur
     if selected_col == COL_POPULATION:
         color_scale = 'YlGnBu' 
@@ -24,6 +31,7 @@ def create_dist_hist(selected_col=COL_POPULATION, department=None):
     df = pd.DataFrame()
     entity_name = "Département"
     
+    # Vue Départementale (Communes)
     if department:
         try:
             df_comm = pd.read_csv(CLEAN_DATA_COMMUNE_PATH)
@@ -43,6 +51,7 @@ def create_dist_hist(selected_col=COL_POPULATION, department=None):
         except FileNotFoundError:
             return px.bar(title="Données non trouvées")
 
+    # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         titre = f"Distribution de la Population {titre_suffixe}"
         range_label = "Plage de Population"
@@ -64,10 +73,9 @@ def create_dist_hist(selected_col=COL_POPULATION, department=None):
     else:
          margin = (metric_max - metric_min) * 0.01
 
+    # Gestion des données
     bins = np.linspace(metric_min, metric_max + margin, n_bins + 1)
-    
     df['Value_Range'] = pd.cut(df[selected_col], bins=bins, labels=False, include_lowest=True)
-    
     dist_data = df.groupby('Value_Range').size().reset_index(name='Compte')
     
     # Création des labels
@@ -95,6 +103,7 @@ def create_dist_hist(selected_col=COL_POPULATION, department=None):
         title=titre
     )
     
+    # Nettoyage visuel
     fig.update_layout(
         font_family="Montserrat, sans-serif",
         template='plotly_white',

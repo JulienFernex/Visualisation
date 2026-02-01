@@ -1,28 +1,32 @@
 """
-Génère la carte
+Génère la carte interactive des départements (Folium)
 """
 
 import pandas as pd
 import folium
 from folium import Element
 from functools import lru_cache
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from config import JOIN_KEY_DATA, JOIN_KEY_GEOJSON, COL_VALUE, COL_POPULATION, COL_RATIO, RAW_DATA_PATH, CLEAN_DATA_PATH
 from src.utils.geojson import get_departements_geojson
 from src.utils.clean_data import clean_etab_to_depart
 from src.utils.clean_data import normalize_txt
 
-# Chargements mis en cache pour éviter les téléchargements et lectures répétées
+
 @lru_cache(maxsize=1)
 def load_geojson():
+    """
+    Charge le fichier GeoJSON des départements en mémoire cache pour 
+    éviter de re-télécharger ou relire le fichier à chaque refresh.
+    """
     return get_departements_geojson(return_geojson=True)
 
 
 @lru_cache(maxsize=1)
 def load_df_counts():
+    """
+    Charge les données statistiques des départements : si le fichier nettoyé n'existe pas, 
+    tente de le régénérer depuis les données brutes.
+    """
     try:
         return pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
@@ -30,6 +34,16 @@ def load_df_counts():
         return pd.read_csv(CLEAN_DATA_PATH)
 
 def create_folium_map(selected_col=COL_VALUE, department=None):
+    """
+    Crée une carte choroplèthe interactive Folium..
+
+    Args:
+        selected_col: Colonne de données à visualiser.
+        department: Si donné, la carte zoome et ne montre que ce département.
+    Returns:
+        Carte Folium.
+    """
+
     # Charger les données nettoyées et le GeoJSON (mis en cache)
     df_counts = load_df_counts().copy()
     geojson_data = load_geojson()
@@ -54,6 +68,7 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
 
     m.get_root().html.add_child(Element(style_css))
 
+    # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         legend_label = "Population Totale"
         color = 'YlGnBu'
@@ -64,7 +79,7 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
         legend_label = "Nombre d'Établissements"
         color = 'YlOrRd'
 
-    # Filtrer le GeoJSON et les données si un département est sélectionné
+    # Filtrage (Si un département est sélectionné)
     if department:
         filtered_features = [f for f in geojson_data.get('features', []) if f.get('properties', {}).get('nom') == department]
         geojson_data_filtered = {'type': 'FeatureCollection', 'features': filtered_features}
@@ -100,8 +115,6 @@ def create_folium_map(selected_col=COL_VALUE, department=None):
         alias_val = "Densité / 100k hab"
     else:
         alias_val = "Nombre établissements"
-
-    # Propriétés dynamiques pour les popups en utilisant l'objet GeoJSON en mémoire
     popup = folium.features.GeoJsonPopup(fields=['nom', 'valeur_dynamique'], aliases=['Département', alias_val], localize=True)
     tooltip = folium.features.GeoJsonTooltip(fields=['nom'], aliases=['Département'])
 

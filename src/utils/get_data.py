@@ -1,16 +1,18 @@
 """
-Récupère les données brutes depuis le web
+Module de récupération des données, télécharge les ressources brutes depuis internet vers le dossier local data/raw/.
 """
-import os
-import sys
-import requests
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+import os
+import requests
 from config import RAW_DIR, GEOJSON_URL, GEOJSON_PATH, DATA_URL, RAW_DATA_PATH, POPULATION_URL, RAW_POPULATION_PATH
 
 def download_file(url, save_path):
     """
-    Télécharge un fichier depuis une URL vers un chemin local
+    Télécharge un fichier depuis une URL vers un chemin local.
+
+    Args:
+        url: L'adresse web de la ressource.
+        save_path: Le chemin local où sauvegarder le fichier.
     """
     if not url:
         print(f"Pas d'URL fournie pour {os.path.basename(save_path)}")
@@ -28,24 +30,22 @@ def download_file(url, save_path):
 
 def get_data():
     """
-    Fonction principale de récupération des données
+    Fonction principale d'extraction.
     """
     # Création du répertoire raw s'il n'existe pas
     os.makedirs(RAW_DIR, exist_ok=True)
 
-    # Récupération du GeoJSON
+    # Récupération des différentes données
     if not os.path.exists(GEOJSON_PATH):
         download_file(GEOJSON_URL, GEOJSON_PATH)
     else:
         print(f"Fichier existant : {GEOJSON_PATH}")
 
-    # Récupération des données CSV
     if not os.path.exists(RAW_DATA_PATH):
         download_file(DATA_URL, RAW_DATA_PATH)
     else:
         print(f"Fichier existant : {RAW_DATA_PATH}")
 
-    # Récupération des données Population
     if not os.path.exists(RAW_POPULATION_PATH):
         download_file(POPULATION_URL, RAW_POPULATION_PATH)
     else:

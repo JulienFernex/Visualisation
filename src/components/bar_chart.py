@@ -1,17 +1,23 @@
 """
-Génère l'Histogramme principal (Bar Chart) - Classement
+Génère l'Histogramme principal de classement (Bar Chart)Z
 """
 
 import pandas as pd
 import plotly.express as px
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.clean_data import normalize_txt
 
 def create_bar_chart(selected_col=COL_VALUE, department=None):
+    """
+    Génère un histogramme classant les entités (Communes ou Départements).
+
+    Args:
+        selected_col: Métrique analysée.
+        department: Filtre départemental (optionnel).
+    Returns:
+        Figure Plotly.
+    """
+
     # Choix de l'échelle de couleur
     if selected_col == COL_POPULATION:
         color_scale = 'YlGnBu' 
@@ -20,18 +26,19 @@ def create_bar_chart(selected_col=COL_VALUE, department=None):
     else:
         color_scale = 'YlOrRd' 
 
-    # Si un département est sélectionné, afficher histogramme des communes
+    # Vue Départementale (Communes)
     if department:
         try:
             df_comm = pd.read_csv(CLEAN_DATA_COMMUNE_PATH)
             dept_norm = normalize_txt(department)
+            # Filtre insensible à la casse/accents
             mask = df_comm['Libelle_Departement'].apply(lambda v: normalize_txt(v) == dept_norm if pd.notna(v) else False)
             df_dept = df_comm[mask]
 
             if not df_dept.empty:
                 df_sorted = df_dept.sort_values(by=selected_col, ascending=True)
                 
-                # Titres dynamiques
+                # Définition du titre et des labels
                 if selected_col == COL_POPULATION:
                     titre = f"Classement des communes par population — {department}"
                     label_y = "Population Totale"
@@ -54,6 +61,7 @@ def create_bar_chart(selected_col=COL_VALUE, department=None):
                     title=titre,
                 )
                 
+                # Nettoyage visuel
                 fig.update_layout(
                     font_family="Montserrat, sans-serif",
                     template='plotly_white',
@@ -69,7 +77,7 @@ def create_bar_chart(selected_col=COL_VALUE, department=None):
         except FileNotFoundError:
             pass
 
-    # Par défaut, niveau département
+    # Vue Nationale par défaut (Départements)
     try:
         df = pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
@@ -77,7 +85,7 @@ def create_bar_chart(selected_col=COL_VALUE, department=None):
 
     df_sorted = df.sort_values(by=selected_col, ascending=True)
 
-    # Définition dynamique du titre et des labels
+    # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         titre = "Classement des départements par population totale"
         label_y = "Population Totale"

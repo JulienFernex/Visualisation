@@ -1,10 +1,9 @@
+"""
+Module définissant le Dashboard, il est appelé par le point d'entrée principal (main.py).
+"""
+
 import dash
 from dash import html, dcc, Input, Output
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
 from config import COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.geojson import get_departements_geojson
 from src.components.map import create_folium_map
@@ -70,7 +69,6 @@ app.layout = html.Div(children=[
             html.Label("Département :", style={'fontWeight': 'bold', 'display': 'block', 'marginBottom': '10px'}),
             dcc.Dropdown(
                 id='department-selector',
-                # Récupère directement la liste des noms (déjà triée par get_departements_geojson)
                 options=[{'label': d, 'value': d} for d in get_departements_geojson()],
                 placeholder="Sélectionnez un département",
                 style={'width': '100%'}
@@ -93,7 +91,7 @@ app.layout = html.Div(children=[
                     height='600',
                     style={'border': 'none', 'borderRadius': '15px'} 
                 ),
-                style={'height': '600px'} # Assure que le loading est centré dans la zone
+                style={'height': '600px'}
             )
         ], style={**STYLE_CARD, 'width': '66%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '0px'}),
 
@@ -117,7 +115,7 @@ app.layout = html.Div(children=[
             )
         ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
 
-        # Histogramme
+        # Graphique bâton
         html.Div([
             dcc.Loading(
                 id='loading-hist',
@@ -168,7 +166,6 @@ app.layout = html.Div(children=[
         ], style={**STYLE_CARD, 'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'})
 
     ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
-
 ], style=STYLE_CONTAINER)
 
 
@@ -183,7 +180,16 @@ app.layout = html.Div(children=[
      Input('department-selector', 'value')]
 )
 def update_dashboard(selected_metric, selected_department):
-    # Si aucun département sélectionné (None ou ''), on affiche tous
+    """
+    Met à jour tous les graphiques lorsque l'utilisateur modifie les filtres.
+
+    Args:
+        selected_col: Métrique analysée.
+        department: Le département sélectionné (ou None).
+    Returns:
+        Un tuple contenant les objets (HTML ou Figure) pour chaque Output.
+    """
+    # Si aucun département sélectionné, on affiche tous
     dept = selected_department if selected_department else None
     
     # Génération des mises à jour

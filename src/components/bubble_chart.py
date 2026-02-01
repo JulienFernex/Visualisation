@@ -4,15 +4,21 @@ Génère un graphique de type Bubble Chart (Scatter Plot)
 
 import pandas as pd
 import plotly.express as px
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from config import CLEAN_DATA_PATH, CLEAN_DATA_COMMUNE_PATH, COL_VALUE, COL_POPULATION, COL_RATIO
 from src.utils.clean_data import normalize_txt
 
 def create_bubble_chart(selected_col=COL_VALUE, department=None):
-    # Si un département est sélectionné, tenter d'afficher les données par commune
+    """
+    Génère un graphique à bulles (Scatter Plot) pour visualiser la distribution
+    et la relation entre les entités (Communes ou Départements).
+
+    Args:
+        selected_col: Métrique analysée.
+        department: Filtre départemental (optionnel).
+    Returns:
+        Figure Plotly.
+    """
+    # Vue Départementale (Communes)
     if department:
         try:
             df_comm = pd.read_csv(CLEAN_DATA_COMMUNE_PATH)
@@ -21,7 +27,7 @@ def create_bubble_chart(selected_col=COL_VALUE, department=None):
             df_dept = df_comm[mask]
 
             if not df_dept.empty:
-                # Titres et Labels dynamiques
+                # Définition du titre et des labels
                 if selected_col == COL_POPULATION:
                     titre = f"Distribution de la population par commune — {department}"
                     label_y = "Population Totale"
@@ -36,17 +42,14 @@ def create_bubble_chart(selected_col=COL_VALUE, department=None):
                     df_dept,
                     x='Libelle_Commune',
                     y=selected_col,
-                    size=selected_col if selected_col in df_dept.columns else None, # Taille proportionnelle à la métrique
-                    color='Libelle_Commune', # Couleur pour distinguer, mais sans légende car trop nombreux
-                    hover_name='Libelle_Commune', # Titre de l'infobulle
-                    
-                    # Configuration des infobulles des axes
+                    size=selected_col if selected_col in df_dept.columns else None,
+                    color='Libelle_Commune',
+                    hover_name='Libelle_Commune',
                     labels={selected_col: label_y, 'Libelle_Commune': 'Commune'},
                     hover_data={
-                        'Libelle_Commune': False, # Ne pas répéter le nom
-                        selected_col: True        # Afficher la valeur
+                        'Libelle_Commune': False,
+                        selected_col: True
                     },
-                    
                     size_max=60,
                     title=titre
                 )
@@ -54,10 +57,10 @@ def create_bubble_chart(selected_col=COL_VALUE, department=None):
                 # Nettoyage visuel
                 fig.update_layout(
                     font_family="Montserrat, sans-serif",
-                    template='plotly_white', # Fond blanc épuré
+                    template='plotly_white',
                     title_font_size=18,
                     showlegend=False,
-                    margin=dict(l=40, r=40, t=60, b=40), # Marges propres
+                    margin=dict(l=40, r=40, t=60, b=40),
                     hoverlabel=dict(bgcolor="white", font_size=14)
                 )
                 fig.update_xaxes(title_text="Commune", showgrid=True, gridcolor='#eee')
@@ -67,13 +70,13 @@ def create_bubble_chart(selected_col=COL_VALUE, department=None):
         except FileNotFoundError:
             pass
 
-    # Par défaut (pas de département ou pas de données communales), rester au niveau département
+    # Vue Nationale par défaut (Départements)
     try:
         df = pd.read_csv(CLEAN_DATA_PATH)
     except FileNotFoundError:
         return px.scatter(title="Données non trouvées")
 
-    # Définition dynamique du titre et des labels (Niveau National)
+    # Définition du titre et des labels
     if selected_col == COL_POPULATION:
         titre = "Distribution de la population totale par département"
         label_y = "Population Totale"
@@ -91,14 +94,11 @@ def create_bubble_chart(selected_col=COL_VALUE, department=None):
         size=selected_col if selected_col in df.columns else None,
         color='Libelle_Departement',
         hover_name='Libelle_Departement',
-        
-        # Configuration des infobulles des axes
         labels={selected_col: label_y, 'Libelle_Departement': 'Département'},
         hover_data={
             'Libelle_Departement': False,
             selected_col: True
         },
-        
         size_max=60,
         title=titre
     )
